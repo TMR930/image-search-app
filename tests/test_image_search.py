@@ -10,7 +10,7 @@ def crawler_that_creates(filename: str = "result.jpg"):
         def __init__(self, downloader_threads, storage):
             self.root_dir = Path(storage["root_dir"])
 
-        def crawl(self, keyword, max_num):
+        def crawl(self, keyword, max_num, filters=None):
             (self.root_dir / filename).write_bytes(b"image")
 
     return CreatingCrawler
@@ -20,7 +20,7 @@ class FailingCrawler:
     def __init__(self, downloader_threads, storage):
         pass
 
-    def crawl(self, keyword, max_num):
+    def crawl(self, keyword, max_num, filters=None):
         raise RuntimeError("crawler details must stay in the server log")
 
 
@@ -28,7 +28,7 @@ class EmptyCrawler:
     def __init__(self, downloader_threads, storage):
         pass
 
-    def crawl(self, keyword, max_num):
+    def crawl(self, keyword, max_num, filters=None):
         pass
 
 
@@ -43,7 +43,7 @@ class ImageSearchTests(unittest.TestCase):
             for keyword in keywords:
                 with self.subTest(keyword=keyword):
                     result = image_search.run_search(
-                        keyword=keyword,
+                        keywords=keyword,
                         engines=["Bing"],
                         max_num=1,
                         download_dir=download_dir,
@@ -58,7 +58,7 @@ class ImageSearchTests(unittest.TestCase):
     def test_all_engines_succeed_and_use_separate_directories(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             result = image_search.run_search(
-                keyword="grape",
+                keywords="grape",
                 engines=["Bing", "Google"],
                 max_num=10,
                 download_dir=Path(temp_dir) / "images",
@@ -72,14 +72,17 @@ class ImageSearchTests(unittest.TestCase):
             self.assertEqual(result.failed_engines, ())
             self.assertEqual(
                 [path.relative_to(result.run_dir).as_posix() for path in result.images],
-                ["bing/bing.jpg", "google/google.png"],
+                [
+                    "bing/keyword-01/bing.jpg",
+                    "google/keyword-01/google.png",
+                ],
             )
 
     def test_partial_success_returns_images_and_failed_engine(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             with self.assertLogs(image_search.LOGGER, level="ERROR"):
                 result = image_search.run_search(
-                    keyword="grape",
+                    keywords="grape",
                     engines=["Bing", "Google"],
                     max_num=10,
                     download_dir=Path(temp_dir) / "images",
@@ -91,13 +94,17 @@ class ImageSearchTests(unittest.TestCase):
 
             self.assertEqual(result.successful_engines, ("Bing",))
             self.assertEqual(result.failed_engines, ("Google",))
+            self.assertEqual(
+                result.failed_searches,
+                (image_search.SearchFailure(engine="Google", keyword="grape"),),
+            )
             self.assertEqual(len(result.images), 1)
 
     def test_all_failures_return_no_images(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             with self.assertLogs(image_search.LOGGER, level="ERROR"):
                 result = image_search.run_search(
-                    keyword="grape",
+                    keywords="grape",
                     engines=["Bing", "Google"],
                     max_num=10,
                     download_dir=Path(temp_dir) / "images",
@@ -114,7 +121,7 @@ class ImageSearchTests(unittest.TestCase):
     def test_successful_crawler_can_return_zero_images(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             result = image_search.run_search(
-                keyword="no results",
+                keywords="no results",
                 engines=["Bing"],
                 max_num=10,
                 download_dir=Path(temp_dir) / "images",
@@ -127,10 +134,15 @@ class ImageSearchTests(unittest.TestCase):
 
     def test_invalid_inputs_do_not_create_download_directory(self):
         invalid_cases = (
-            {"keyword": " ", "engines": ["Bing"], "max_num": 1},
-            {"keyword": "grape", "engines": [], "max_num": 1},
-            {"keyword": "grape", "engines": ["Bing"], "max_num": 0},
-            {"keyword": "grape", "engines": ["Bing"], "max_num": 501},
+            {"keywords": " ", "engines": ["Bing"], "max_num": 1},
+            {"keywords": "grape", "engines": [], "max_num": 1},
+            {"keywords": "grape", "engines": ["Bing"], "max_num": 0},
+            {"keywords": "grape", "engines": ["Bing"], "max_num": 501},
+            {
+                "keywords": [f"word-{index}" for index in range(11)],
+                "engines": ["Bing"],
+                "max_num": 1,
+            },
         )
 
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -151,13 +163,81 @@ class ImageSearchTests(unittest.TestCase):
 
             with self.assertRaisesRegex(ValueError, "Unsupported search engine"):
                 image_search.run_search(
-                    keyword="grape",
+                    keywords="grape",
                     engines=["Google"],
                     max_num=1,
                     download_dir=download_dir,
                 )
 
             self.assertFalse(download_dir.exists())
+
+    def test_multiple_keywords_are_deduplicated_and_use_separate_directories(self):
+        calls = []
+
+        class RecordingCrawler:
+            def __init__(self, downloader_threads, storage):
+                self.root_dir = Path(storage["root_dir"])
+
+            def crawl(self, keyword, max_num, filters=None):
+                calls.append((keyword, max_num, filters))
+                (self.root_dir / "result.jpg").write_bytes(b"image")
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            result = image_search.run_search(
+                keywords=[" Red grape ", "green grape", "red GRAPE", ""],
+                engines=["Bing"],
+                max_num=25,
+                download_dir=Path(temp_dir) / "images",
+                filters={"type": "photo", "layout": "wide", "size": ">640x480"},
+                crawler_types={"Bing": RecordingCrawler},
+            )
+
+            self.assertEqual(
+                calls,
+                [
+                    (
+                        "Red grape",
+                        25,
+                        {"type": "photo", "layout": "wide", "size": ">640x480"},
+                    ),
+                    (
+                        "green grape",
+                        25,
+                        {"type": "photo", "layout": "wide", "size": ">640x480"},
+                    ),
+                ],
+            )
+            self.assertEqual(
+                [path.relative_to(result.run_dir).as_posix() for path in result.images],
+                [
+                    "bing/keyword-01/result.jpg",
+                    "bing/keyword-02/result.jpg",
+                ],
+            )
+            self.assertEqual(result.keywords, ("Red grape", "green grape"))
+
+    def test_invalid_filters_do_not_create_download_directory(self):
+        invalid_filters = (
+            {"unknown": "value"},
+            {"type": "portrait"},
+            {"size": ">0x480"},
+            {"size": "640x480"},
+        )
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            download_dir = Path(temp_dir) / "images"
+            for filters in invalid_filters:
+                with self.subTest(filters=filters):
+                    with self.assertRaises(ValueError):
+                        image_search.run_search(
+                            keywords="grape",
+                            engines=["Bing"],
+                            max_num=1,
+                            download_dir=download_dir,
+                            filters=filters,
+                            crawler_types={"Bing": EmptyCrawler},
+                        )
+                    self.assertFalse(download_dir.exists())
 
     def test_collect_images_filters_and_sorts_supported_files(self):
         with tempfile.TemporaryDirectory() as temp_dir:
