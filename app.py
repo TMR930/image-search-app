@@ -1,71 +1,72 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-import os
+import logging
+from pathlib import Path
+
 import streamlit as st
-from icrawler.builtin import BingImageCrawler, GoogleImageCrawler
 
-DOWNLOAD_DIR = './images'
+import image_search
 
-st.title('Image Searcher')
-serch_text = st.text_input(label='Search word', value='Dog')
-image_dir = '{}/{}'.format(DOWNLOAD_DIR, serch_text)
-btn = st.button('search')
+DOWNLOAD_DIR = Path("./images")
+LOGGER = logging.getLogger("image_search_app")
 
-st.sidebar.title('Advanced Setting')
-options = st.sidebar.multiselect(label='Search engine',
-                                 options=['Bing', 'Google'],
-                                 default=['Bing'])
-max_num = st.sidebar.number_input(label='Maximum number of images to acquire',
-                                  value=100,
-                                  help="Up to 500 sheets")
+
+def display_images(images: tuple[Path, ...], run_dir: Path) -> None:
+    """Display images in rows of up to four columns."""
+    for start in range(0, len(images), 4):
+        columns = st.columns(4)
+        for column, image_path in zip(columns, images[start : start + 4]):
+            caption = image_path.relative_to(run_dir).as_posix()
+            column.image(str(image_path), width=150, caption=caption)
+
+
+st.title("Image Searcher")
+search_text = st.text_input(label="Search word", value="Dog")
+btn = st.button("search")
+
+st.sidebar.title("Advanced Setting")
+options = st.sidebar.multiselect(
+    label="Search engine",
+    options=["Bing", "Google"],
+    default=["Bing"],
+)
+max_num = st.sidebar.number_input(
+    label="Maximum number of images to acquire",
+    min_value=1,
+    max_value=500,
+    value=100,
+    step=1,
+    help="Up to 500 images",
+)
 
 if btn:
-    if 'Bing' in options:
-        bing_crawler = BingImageCrawler(
-            downloader_threads=4,
-            storage={'root_dir': image_dir})
+    keyword = search_text.strip()
+    if not keyword:
+        st.error("Please enter a search word.")
+    elif not options:
+        st.error("Please select at least one search engine.")
+    else:
         try:
-            with st.spinner('Wait for it...'):
-                bing_crawler.crawl(keyword=serch_text, max_num=max_num)
-        except:
-            st.error('Failed to get images from Bing.')
-
-    if 'Google' in options:
-        google_crawler = GoogleImageCrawler(
-            downloader_threads=4,
-            storage={'root_dir': image_dir})
-        try:
-            with st.spinner('Wait for it...'):
-                google_crawler.crawl(keyword=serch_text,
-                                     max_num=max_num)
-        except:
-            st.error('Failed to get image from Google.')
-
-    st.success('Completion.')
-
-    # Get list of image files
-    fName_list = os.listdir(image_dir)
-    # Number of image files
-    img_file_num = len(os.listdir(image_dir))
-    st.write("files : {}".format(len(os.listdir(image_dir))))
-
-    # display multiple images
-    idx = 0
-    for _ in range(len(fName_list)-1):
-        cols = st.columns(4)
-
-        if idx < len(fName_list):
-            cols[0].image(f'{image_dir}/{fName_list[idx]}', width=150, caption=fName_list[idx])
-            print(os.path.join(image_dir, fName_list[idx]))
-            idx += 1
-        if idx < len(fName_list):
-            cols[1].image(f'{image_dir}/{fName_list[idx]}', width=150, caption=fName_list[idx])
-            idx += 1
-        if idx < len(fName_list):
-            cols[2].image(f'{image_dir}/{fName_list[idx]}', width=150, caption=fName_list[idx])
-            idx += 1
-        if idx < len(fName_list):
-            cols[3].image(f'{image_dir}/{fName_list[idx]}', width=150, caption=fName_list[idx])
-            idx += 1
+            with st.spinner("Wait for it..."):
+                result = image_search.run_search(
+                    keyword=keyword,
+                    engines=options,
+                    max_num=max_num,
+                    download_dir=DOWNLOAD_DIR,
+                )
+        except Exception:
+            LOGGER.exception("Image search could not be started.")
+            st.error("Image search could not be started.")
         else:
-            break
+            for engine in result.failed_engines:
+                st.error(f"Failed to get images from {engine}.")
+
+            if result.images:
+                st.write(f"files : {len(result.images)}")
+                if result.failed_engines:
+                    st.warning("Search completed with some errors.")
+                else:
+                    st.success("Completion.")
+                display_images(result.images, result.run_dir)
+            else:
+                st.warning("No images were found.")
