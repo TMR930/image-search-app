@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Mapping
 from uuid import uuid4
 
-from icrawler.builtin import BingImageCrawler, GoogleImageCrawler
+from icrawler.builtin import BingImageCrawler
 
 LOGGER = logging.getLogger(__name__)
 
@@ -18,7 +18,6 @@ IMAGE_EXTENSIONS = frozenset(
 )
 CRAWLER_TYPES = {
     "Bing": BingImageCrawler,
-    "Google": GoogleImageCrawler,
 }
 
 
