@@ -36,6 +36,7 @@ class AppTests(unittest.TestCase):
         self.assertEqual(len(app.exception), 0)
         self.assertEqual(app.text_input[0].value, "Dog")
         self.assertEqual(app.multiselect[0].value, ["Bing"])
+        self.assertEqual(app.multiselect[0].options, ["Bing"])
         self.assertEqual(app.number_input[0].value, 100)
         self.assertEqual(app.number_input[0].min, 1)
         self.assertEqual(app.number_input[0].max, 500)

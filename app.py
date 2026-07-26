@@ -25,11 +25,13 @@ search_text = st.text_input(label="Search word", value="Dog")
 btn = st.button("search")
 
 st.sidebar.title("Advanced Setting")
+available_engines = list(image_search.CRAWLER_TYPES)
 options = st.sidebar.multiselect(
     label="Search engine",
-    options=["Bing", "Google"],
-    default=["Bing"],
+    options=available_engines,
+    default=available_engines,
 )
+st.sidebar.caption("Google image search is temporarily unavailable.")
 max_num = st.sidebar.number_input(
     label="Maximum number of images to acquire",
     min_value=1,

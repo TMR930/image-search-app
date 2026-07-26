@@ -1,6 +1,6 @@
 # image-search-app
 
-Search and save images from Bing and Google using Streamlit and icrawler.
+Search and save images from Bing using Streamlit and icrawler.
 
 <img src="./src/screen.gif" />
 
@@ -28,10 +28,11 @@ uv run streamlit run app.py
 ```
 
 Open <http://localhost:8501> in a browser. Search results are saved in a unique
-directory below `images/` for each run, with separate directories for Bing and
-Google.
+directory below `images/` for each run.
 
 The maximum number of images per search engine can be set from 1 to 500.
+Google image search is temporarily unavailable because its current response
+format is not compatible with icrawler.
 
 ## Tests
 

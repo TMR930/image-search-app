@@ -145,6 +145,20 @@ class ImageSearchTests(unittest.TestCase):
                         )
                     self.assertFalse(download_dir.exists())
 
+    def test_google_is_not_available_in_the_production_crawler_mapping(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            download_dir = Path(temp_dir) / "images"
+
+            with self.assertRaisesRegex(ValueError, "Unsupported search engine"):
+                image_search.run_search(
+                    keyword="grape",
+                    engines=["Google"],
+                    max_num=1,
+                    download_dir=download_dir,
+                )
+
+            self.assertFalse(download_dir.exists())
+
     def test_collect_images_filters_and_sorts_supported_files(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             run_dir = Path(temp_dir)
