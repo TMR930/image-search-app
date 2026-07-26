@@ -1,7 +1,7 @@
 [project]
 name = "image-search-app"
 version = "0.1.0"
-description = "A Streamlit app for searching and saving images from Bing and Google"
+description = "A Streamlit app for searching and saving images from Bing"
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
