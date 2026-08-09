@@ -6,7 +6,7 @@ readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
     "icrawler>=0.6.7",
-    "streamlit>=1.24.1",
+    "streamlit>=1.61.1",
 ]
 
 [dependency-groups]
