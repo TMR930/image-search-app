@@ -159,14 +159,17 @@ def run_search(
 ) -> SearchResult:
     """Run the requested crawlers and return their combined local results."""
     normalized_keywords = normalize_keywords(keywords)
-    if not engines:
+    normalized_engines = list(dict.fromkeys(engines))
+    if not normalized_engines:
         raise ValueError("At least one search engine is required.")
     if not 1 <= max_num <= 500:
         raise ValueError("The maximum number of images must be between 1 and 500.")
     normalized_filters = normalize_bing_filters(filters)
 
     available_crawlers = CRAWLER_TYPES if crawler_types is None else crawler_types
-    unknown_engines = [engine for engine in engines if engine not in available_crawlers]
+    unknown_engines = [
+        engine for engine in normalized_engines if engine not in available_crawlers
+    ]
     if unknown_engines:
         raise ValueError(f"Unsupported search engine: {unknown_engines[0]}")
 
@@ -175,7 +178,7 @@ def run_search(
     failed_engines: list[str] = []
     failed_searches: list[SearchFailure] = []
 
-    for engine in engines:
+    for engine in normalized_engines:
         engine_dir = run_dir / engine.lower()
         engine_dir.mkdir()
         engine_succeeded = False

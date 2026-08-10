@@ -7,7 +7,8 @@ import streamlit as st
 
 from image_search_app import search
 
-DOWNLOAD_DIR = Path("./data/runs")
+PROJECT_ROOT = Path(__file__).resolve().parent
+DOWNLOAD_DIR = PROJECT_ROOT / "data" / "runs"
 LOGGER = logging.getLogger("image_search_app")
 
 
