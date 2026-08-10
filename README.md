@@ -2,7 +2,7 @@
 
 Search and save images from Bing using Streamlit and icrawler.
 
-<img src="./src/screen.gif" />
+<img src="./assets/screen.gif" />
 
 ## Requirements
 
@@ -28,7 +28,7 @@ uv run streamlit run app.py
 ```
 
 Open <http://localhost:8501> in a browser. Search results are saved in a unique
-directory below `images/` for each run.
+directory below `data/runs/` for each run.
 
 Enter one search word or phrase per line to run up to 10 searches at once. The
 maximum number of images can be set from 1 to 500 for each search word.

@@ -6,12 +6,12 @@ from unittest.mock import patch
 from PIL import Image
 from streamlit.testing.v1 import AppTest
 
-import image_search
+from image_search_app import search
 
 APP_PATH = str(Path(__file__).resolve().parents[1] / "app.py")
 
 
-def make_result(run_dir: Path, image_count: int) -> image_search.SearchResult:
+def make_result(run_dir: Path, image_count: int) -> search.SearchResult:
     image_dir = run_dir / "bing" / "keyword-01"
     image_dir.mkdir(parents=True)
     images = []
@@ -20,7 +20,7 @@ def make_result(run_dir: Path, image_count: int) -> image_search.SearchResult:
         Image.new("RGB", (2, 2), color="purple").save(image_path)
         images.append(image_path)
 
-    return image_search.SearchResult(
+    return search.SearchResult(
         run_dir=run_dir,
         images=tuple(images),
         successful_engines=("Bing",),
@@ -47,7 +47,7 @@ class AppTests(unittest.TestCase):
         app.text_area[0].set_value("   ")
         app.button[0].click()
 
-        with patch("image_search.run_search") as run_search:
+        with patch("image_search_app.search.run_search") as run_search:
             app.run()
 
         run_search.assert_not_called()
@@ -62,7 +62,7 @@ class AppTests(unittest.TestCase):
         app.multiselect[0].set_value([])
         app.button[0].click()
 
-        with patch("image_search.run_search") as run_search:
+        with patch("image_search_app.search.run_search") as run_search:
             app.run()
 
         run_search.assert_not_called()
@@ -80,7 +80,9 @@ class AppTests(unittest.TestCase):
                     app = AppTest.from_file(APP_PATH).run()
                     app.button[0].click()
 
-                    with patch("image_search.run_search", return_value=result):
+                    with patch(
+                        "image_search_app.search.run_search", return_value=result
+                    ):
                         app.run()
 
                     self.assertEqual(len(app.exception), 0)
@@ -99,19 +101,19 @@ class AppTests(unittest.TestCase):
     def test_partial_failure_is_reported_without_exception_details(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             result = make_result(Path(temp_dir) / "run-test", 1)
-            result = image_search.SearchResult(
+            result = search.SearchResult(
                 run_dir=result.run_dir,
                 images=result.images,
                 successful_engines=("Bing",),
                 failed_engines=("Bing",),
                 failed_searches=(
-                    image_search.SearchFailure(engine="Bing", keyword="second word"),
+                    search.SearchFailure(engine="Bing", keyword="second word"),
                 ),
             )
             app = AppTest.from_file(APP_PATH).run()
             app.button[0].click()
 
-            with patch("image_search.run_search", return_value=result):
+            with patch("image_search_app.search.run_search", return_value=result):
                 app.run()
 
             self.assertEqual(
@@ -128,7 +130,7 @@ class AppTests(unittest.TestCase):
     def test_multiple_search_words_and_filters_are_forwarded(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             result = make_result(Path(temp_dir) / "run-test", 1)
-            result = image_search.SearchResult(
+            result = search.SearchResult(
                 run_dir=result.run_dir,
                 images=result.images,
                 successful_engines=result.successful_engines,
@@ -145,7 +147,9 @@ class AppTests(unittest.TestCase):
             ).set_value("wide")
             app.button[0].click()
 
-            with patch("image_search.run_search", return_value=result) as run_search:
+            with patch(
+                "image_search_app.search.run_search", return_value=result
+            ) as run_search:
                 app.run()
 
             self.assertEqual(
@@ -186,7 +190,9 @@ class AppTests(unittest.TestCase):
             ).set_value(600)
             app.button[0].click()
 
-            with patch("image_search.run_search", return_value=result) as run_search:
+            with patch(
+                "image_search_app.search.run_search", return_value=result
+            ) as run_search:
                 app.run()
 
             self.assertEqual(
@@ -201,7 +207,7 @@ class AppTests(unittest.TestCase):
 
         with self.assertLogs("image_search_app", level="ERROR") as logs:
             with patch(
-                "image_search.run_search",
+                "image_search_app.search.run_search",
                 side_effect=OSError("private filesystem details"),
             ):
                 app.run()

@@ -5,9 +5,9 @@ from pathlib import Path
 
 import streamlit as st
 
-import image_search
+from image_search_app import search
 
-DOWNLOAD_DIR = Path("./images")
+DOWNLOAD_DIR = Path("./data/runs")
 LOGGER = logging.getLogger("image_search_app")
 
 
@@ -29,7 +29,7 @@ search_text = st.text_area(
 btn = st.button("search")
 
 st.sidebar.title("Advanced Setting")
-available_engines = list(image_search.CRAWLER_TYPES)
+available_engines = list(search.CRAWLER_TYPES)
 options = st.sidebar.multiselect(
     label="Search engine",
     options=available_engines,
@@ -51,10 +51,10 @@ filter_values = {
         label=name.replace("_", " ").title(),
         options=("Any", *values),
     )
-    for name, values in image_search.BING_FILTER_OPTIONS.items()
+    for name, values in search.BING_FILTER_OPTIONS.items()
     if name != "size"
 }
-size_options = ("Any", *image_search.BING_FILTER_OPTIONS["size"], "Custom minimum")
+size_options = ("Any", *search.BING_FILTER_OPTIONS["size"], "Custom minimum")
 size_filter = st.sidebar.selectbox(label="Size", options=size_options)
 if size_filter == "Custom minimum":
     minimum_width = st.sidebar.number_input(
@@ -80,7 +80,7 @@ filters = {name: value for name, value in filter_values.items() if value != "Any
 if btn:
     keywords = None
     try:
-        normalized_keywords = image_search.normalize_keywords(search_text)
+        normalized_keywords = search.normalize_keywords(search_text)
     except ValueError as exc:
         st.error(str(exc))
     else:
@@ -93,7 +93,7 @@ if btn:
     else:
         try:
             with st.spinner("Wait for it..."):
-                result = image_search.run_search(
+                result = search.run_search(
                     keywords=keywords,
                     engines=options,
                     max_num=max_num,
