@@ -78,6 +78,19 @@ class ImageSearchTests(unittest.TestCase):
                 ],
             )
 
+    def test_duplicate_engines_run_only_once(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            result = search.run_search(
+                keywords="grape",
+                engines=["Bing", "Bing"],
+                max_num=1,
+                download_dir=Path(temp_dir) / "images",
+                crawler_types={"Bing": crawler_that_creates()},
+            )
+
+            self.assertEqual(result.successful_engines, ("Bing",))
+            self.assertEqual(len(result.images), 1)
+
     def test_partial_success_returns_images_and_failed_engine(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             with self.assertLogs(search.LOGGER, level="ERROR"):

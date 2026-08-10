@@ -14,7 +14,7 @@ uv when necessary.
 ## Setup
 
 ```shell
-git clone https://github.com/tomcat930/image-search-app.git
+git clone https://github.com/TMR930/image-search-app.git
 cd image-search-app
 uv sync --locked
 ```
