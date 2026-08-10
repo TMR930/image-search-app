@@ -75,11 +75,7 @@ if size_filter == "Custom minimum":
 elif size_filter != "Any":
     filter_values["size"] = size_filter
 
-filters = {
-    name: value
-    for name, value in filter_values.items()
-    if value != "Any"
-}
+filters = {name: value for name, value in filter_values.items() if value != "Any"}
 
 if btn:
     keywords = None
@@ -111,7 +107,7 @@ if btn:
             if result.failed_searches:
                 for failure in result.failed_searches:
                     st.error(
-                        f'Failed to get images from {failure.engine} '
+                        f"Failed to get images from {failure.engine} "
                         f'for "{failure.keyword}".'
                     )
             else:

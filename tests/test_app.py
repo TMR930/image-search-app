@@ -8,7 +8,6 @@ from streamlit.testing.v1 import AppTest
 
 import image_search
 
-
 APP_PATH = str(Path(__file__).resolve().parents[1] / "app.py")
 
 
@@ -67,9 +66,10 @@ class AppTests(unittest.TestCase):
             app.run()
 
         run_search.assert_not_called()
-        self.assertEqual([error.value for error in app.error], [
-            "Please select at least one search engine."
-        ])
+        self.assertEqual(
+            [error.value for error in app.error],
+            ["Please select at least one search engine."],
+        )
         self.assertEqual(len(app.exception), 0)
 
     def test_zero_one_four_and_five_images_render_without_error(self):
@@ -137,9 +137,9 @@ class AppTests(unittest.TestCase):
             )
             app = AppTest.from_file(APP_PATH).run()
             app.text_area[0].set_value("red grape\ngreen grape")
-            next(widget for widget in app.selectbox if widget.label == "Type").set_value(
-                "photo"
-            )
+            next(
+                widget for widget in app.selectbox if widget.label == "Type"
+            ).set_value("photo")
             next(
                 widget for widget in app.selectbox if widget.label == "Layout"
             ).set_value("wide")
@@ -172,16 +172,16 @@ class AppTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             result = make_result(Path(temp_dir) / "run-test", 0)
             app = AppTest.from_file(APP_PATH).run()
-            next(widget for widget in app.selectbox if widget.label == "Size").set_value(
-                "Custom minimum"
-            )
+            next(
+                widget for widget in app.selectbox if widget.label == "Size"
+            ).set_value("Custom minimum")
             app.run()
             next(
-                widget for widget in app.number_input
-                if widget.label == "Minimum width"
+                widget for widget in app.number_input if widget.label == "Minimum width"
             ).set_value(800)
             next(
-                widget for widget in app.number_input
+                widget
+                for widget in app.number_input
                 if widget.label == "Minimum height"
             ).set_value(600)
             app.button[0].click()

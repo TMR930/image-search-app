@@ -54,10 +54,11 @@ format is not compatible with icrawler.
 uv run python -m unittest discover -s tests -v
 ```
 
-## Docker
+## Code quality
 
-Alternatively, launch the app with Docker Compose.
+Run Ruff lint and formatting checks.
 
 ```shell
-docker compose up -d
+uv run ruff check .
+uv run ruff format --check .
 ```
