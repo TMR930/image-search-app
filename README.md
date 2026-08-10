@@ -2,7 +2,11 @@
 
 Search and save images from Bing using Streamlit and icrawler.
 
+<<<<<<< HEAD
+<img src="./assets/screen.gif" />
+=======
 <img src="./src/screen.gif" />
+>>>>>>> origin/main
 
 ## Requirements
 
@@ -28,7 +32,7 @@ uv run streamlit run app.py
 ```
 
 Open <http://localhost:8501> in a browser. Search results are saved in a unique
-directory below `images/` for each run.
+directory below `data/runs/` for each run.
 
 Enter one search word or phrase per line to run up to 10 searches at once. The
 maximum number of images can be set from 1 to 500 for each search word.
@@ -54,10 +58,11 @@ format is not compatible with icrawler.
 uv run python -m unittest discover -s tests -v
 ```
 
-## Docker
+## Code quality
 
-Alternatively, launch the app with Docker Compose.
+Run Ruff lint and formatting checks.
 
 ```shell
-docker compose up -d
+uv run ruff check .
+uv run ruff format --check .
 ```
