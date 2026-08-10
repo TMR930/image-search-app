@@ -2,7 +2,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-import image_search
+from image_search_app import search
 
 
 def crawler_that_creates(filename: str = "result.jpg"):
@@ -42,7 +42,7 @@ class ImageSearchTests(unittest.TestCase):
 
             for keyword in keywords:
                 with self.subTest(keyword=keyword):
-                    result = image_search.run_search(
+                    result = search.run_search(
                         keywords=keyword,
                         engines=["Bing"],
                         max_num=1,
@@ -57,7 +57,7 @@ class ImageSearchTests(unittest.TestCase):
 
     def test_all_engines_succeed_and_use_separate_directories(self):
         with tempfile.TemporaryDirectory() as temp_dir:
-            result = image_search.run_search(
+            result = search.run_search(
                 keywords="grape",
                 engines=["Bing", "Google"],
                 max_num=10,
@@ -80,8 +80,8 @@ class ImageSearchTests(unittest.TestCase):
 
     def test_partial_success_returns_images_and_failed_engine(self):
         with tempfile.TemporaryDirectory() as temp_dir:
-            with self.assertLogs(image_search.LOGGER, level="ERROR"):
-                result = image_search.run_search(
+            with self.assertLogs(search.LOGGER, level="ERROR"):
+                result = search.run_search(
                     keywords="grape",
                     engines=["Bing", "Google"],
                     max_num=10,
@@ -96,14 +96,14 @@ class ImageSearchTests(unittest.TestCase):
             self.assertEqual(result.failed_engines, ("Google",))
             self.assertEqual(
                 result.failed_searches,
-                (image_search.SearchFailure(engine="Google", keyword="grape"),),
+                (search.SearchFailure(engine="Google", keyword="grape"),),
             )
             self.assertEqual(len(result.images), 1)
 
     def test_all_failures_return_no_images(self):
         with tempfile.TemporaryDirectory() as temp_dir:
-            with self.assertLogs(image_search.LOGGER, level="ERROR"):
-                result = image_search.run_search(
+            with self.assertLogs(search.LOGGER, level="ERROR"):
+                result = search.run_search(
                     keywords="grape",
                     engines=["Bing", "Google"],
                     max_num=10,
@@ -120,7 +120,7 @@ class ImageSearchTests(unittest.TestCase):
 
     def test_successful_crawler_can_return_zero_images(self):
         with tempfile.TemporaryDirectory() as temp_dir:
-            result = image_search.run_search(
+            result = search.run_search(
                 keywords="no results",
                 engines=["Bing"],
                 max_num=10,
@@ -150,7 +150,7 @@ class ImageSearchTests(unittest.TestCase):
             for case in invalid_cases:
                 with self.subTest(case=case):
                     with self.assertRaises(ValueError):
-                        image_search.run_search(
+                        search.run_search(
                             **case,
                             download_dir=download_dir,
                             crawler_types={"Bing": EmptyCrawler},
@@ -162,7 +162,7 @@ class ImageSearchTests(unittest.TestCase):
             download_dir = Path(temp_dir) / "images"
 
             with self.assertRaisesRegex(ValueError, "Unsupported search engine"):
-                image_search.run_search(
+                search.run_search(
                     keywords="grape",
                     engines=["Google"],
                     max_num=1,
@@ -183,7 +183,7 @@ class ImageSearchTests(unittest.TestCase):
                 (self.root_dir / "result.jpg").write_bytes(b"image")
 
         with tempfile.TemporaryDirectory() as temp_dir:
-            result = image_search.run_search(
+            result = search.run_search(
                 keywords=[" Red grape ", "green grape", "red GRAPE", ""],
                 engines=["Bing"],
                 max_num=25,
@@ -229,7 +229,7 @@ class ImageSearchTests(unittest.TestCase):
             for filters in invalid_filters:
                 with self.subTest(filters=filters):
                     with self.assertRaises(ValueError):
-                        image_search.run_search(
+                        search.run_search(
                             keywords="grape",
                             engines=["Bing"],
                             max_num=1,
@@ -248,7 +248,7 @@ class ImageSearchTests(unittest.TestCase):
             (run_dir / "bing" / "a.jpg").write_bytes(b"image")
             (run_dir / "bing" / "notes.txt").write_text("not an image")
 
-            images = image_search.collect_images(run_dir)
+            images = search.collect_images(run_dir)
 
             self.assertEqual(
                 [path.relative_to(run_dir).as_posix() for path in images],
