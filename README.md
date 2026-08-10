@@ -2,11 +2,7 @@
 
 Search and save images from Bing using Streamlit and icrawler.
 
-<<<<<<< HEAD
 <img src="./assets/screen.gif" />
-=======
-<img src="./src/screen.gif" />
->>>>>>> origin/main
 
 ## Requirements
 
